@@ -1,0 +1,594 @@
+### Filename: ./src/app/globals.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+
+
+### Filename: ./context_llm/combine_files.sh
+#!/bin/bash
+
+# Define output file
+output_file="context_llm/all_code_one_file.txt"
+
+# List of file extensions to include (expandable)
+file_types=("*.py" "*.js" "*.java" "*.cpp" "*.c" "*.h" "*.html" "*.css" "*.php" "*.rb" "*.sh" "*.go" "*.ts" "*.json" "*.yml" "*.sol" "*.local" "*.svg" "*.tsx" "*.mjs")
+
+# Initialize/Empty the output file
+> "$output_file"
+
+# Function to append file contents to output
+append_files() {
+  local extension="$1"
+  for file in $(find . -type f -name "$extension" \
+    -not -path "./node_modules/*" \
+    -not -path "./.git/*" \
+    -not -path "./.cache/*" \
+    -not -path "./.config/*" \
+    -not -path "./.vscode/*" \
+    -not -path "./venv/*" \
+    -not -path "./.replit" \
+    -not -path "./replit.nix" \
+    -not -path "./*.lock" \
+    -not -path "./package-lock.json" \
+    -not -path "./.next/*" \
+    -not -path "./yarn.lock"
+  ); do
+    echo "### Filename: $file" >> "$output_file"
+    cat "$file" >> "$output_file"
+    echo -e "\n\n" >> "$output_file"
+  done
+}
+
+# Loop through all specified file types and add to output file
+for filetype in "${file_types[@]}"; do
+  append_files "$filetype"
+done
+
+echo "All relevant code files have been successfully combined into $output_file."
+
+
+### Filename: ./context_llm/generate_file_tree.sh
+#!/bin/bash
+
+# File to save the tree
+OUTPUT_FILE="./context_llm/file_tree.txt"
+
+# Directories to include (adjust as needed)
+INCLUDE_DIRS=("src" "public" "context_llm" ".")
+
+# Relevant file extensions and filenames
+FILE_EXTENSIONS=("ts" "tsx" "json" "svg" "ico" "css" "local" "sh" "txt" "ts" "mjs" "md")
+SPECIAL_FILES=("package.json" "tsconfig.json")
+
+# Function to check if a filename matches relevant criteria
+function is_relevant {
+    local filename=$1
+    for ext in "${FILE_EXTENSIONS[@]}"; do
+        if [[ $filename == *.$ext ]]; then
+            return 0
+        fi
+    done
+    for special in "${SPECIAL_FILES[@]}"; do
+        if [[ $filename == $special ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Generate file tree and save to output file
+echo "Project File Tree" > $OUTPUT_FILE
+for dir in "${INCLUDE_DIRS[@]}"; do
+    echo "$dir/" >> $OUTPUT_FILE
+    find $dir \( -path "./node_modules" -prune \) -o -type f | while read file; do
+        filename=$(basename "$file")
+        if is_relevant "$filename"; then
+            echo "  $file" >> $OUTPUT_FILE
+        fi
+    done
+done
+
+echo "File tree saved to $OUTPUT_FILE"
+
+
+### Filename: ./next-env.d.ts
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+/// <reference types="next/navigation-types/compat/navigation" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/basic-features/typescript for more information.
+
+
+
+### Filename: ./src/components/index.ts
+export { default as TokenDeployer } from './TokenDeployer';
+
+
+### Filename: ./src/pages/api/deploy.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { ethers } from 'ethers';
+import * as fs from 'fs';
+import * as path from 'path';
+import solc from 'solc';
+
+function findImports(importPath: string) {
+  try {
+    const resolvedPath = path.resolve(process.cwd(), 'node_modules', importPath);
+    return {
+      contents: fs.readFileSync(resolvedPath, 'utf8')
+    };
+  } catch (error) {
+    return { error: 'File not found: ' + importPath };
+  }
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  const { name, symbol } = req.body;
+  if (!name || !symbol) {
+    return res.status(400).json({ message: 'Name and symbol are required' });
+  }
+
+  try {
+    const contractPath = path.resolve(process.cwd(), './contracts/Token.sol');
+    const contractSource = fs.readFileSync(contractPath, 'utf8');
+
+    const input = {
+      language: 'Solidity',
+      sources: {
+        'Token.sol': { content: contractSource }
+      },
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200
+        },
+        outputSelection: {
+          '*': {
+            '*': ['abi', 'evm.bytecode']
+          }
+        }
+      }
+    };
+
+    const output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
+    if (output.errors) {
+      console.error(output.errors);
+      return res.status(500).json({ message: 'Compilation failed', errors: output.errors });
+    }
+
+    const bytecode = output.contracts['Token.sol'].Token.evm.bytecode.object;
+    const abi = output.contracts['Token.sol'].Token.abi;
+
+    const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
+    const factory = new ethers.ContractFactory(abi, bytecode, wallet);
+
+    const contract = await factory.deploy(name, symbol);
+    await contract.deployed();
+    res.json({ message: `Contract deployed at address: ${contract.address}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: `Deployment failed: ${(error as Error).message}` });
+  }
+}
+
+
+### Filename: ./src/types/global.d.ts
+interface Window {
+    ethereum?: any;
+  }
+
+
+### Filename: ./src/types/solc.d.ts
+declare module 'solc' {
+    // Add type declarations for specific functions or properties you use from 'solc' if needed.
+    // For basic usage, the following might be enough:
+    const compile: any; 
+    export default compile;
+}
+
+
+### Filename: ./tailwind.config.ts
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic":
+          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
+
+
+
+### Filename: ./.eslintrc.json
+{
+  "extends": "next/core-web-vitals"
+}
+
+
+
+### Filename: ./package.json
+{
+  "name": "independence-store",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.4.20",
+    "axios": "^1.7.3",
+    "ethers": "^5.7.2",
+    "next": "14.2.5",
+    "react": "^18",
+    "react-dom": "^18",
+    "solc": "^0.8.26"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
+
+
+
+### Filename: ./tsconfig.json
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "types": ["node"],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+
+
+
+### Filename: ./contracts/Token.sol
+
+
+
+### Filename: ./.env.local
+NEXT_PUBLIC_WEBHOOK_URL=your_n8n_webhook_url
+NEXT_PUBLIC_RECIPIENT_ADDRESS=your_recipient_address
+INFURA_URL=your_infura_url
+PRIVATE_KEY=your_private_key
+
+
+### Filename: ./public/next.svg
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+
+
+### Filename: ./public/vercel.svg
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 283 64"><path fill="black" d="M141 16c-11 0-19 7-19 18s9 18 20 18c7 0 13-3 16-7l-7-5c-2 3-6 4-9 4-5 0-9-3-10-7h28v-3c0-11-8-18-19-18zm-9 15c1-4 4-7 9-7s8 3 9 7h-18zm117-15c-11 0-19 7-19 18s9 18 20 18c6 0 12-3 16-7l-8-5c-2 3-5 4-8 4-5 0-9-3-11-7h28l1-3c0-11-8-18-19-18zm-10 15c2-4 5-7 10-7s8 3 9 7h-19zm-39 3c0 6 4 10 10 10 4 0 7-2 9-5l8 5c-3 5-9 8-17 8-11 0-19-7-19-18s8-18 19-18c8 0 14 3 17 8l-8 5c-2-3-5-5-9-5-6 0-10 4-10 10zm83-29v46h-9V5h9zM37 0l37 64H0L37 0zm92 5-27 48L74 5h10l18 30 17-30h10zm59 12v10l-3-1c-6 0-10 4-10 10v15h-9V17h9v9c0-5 6-9 13-9z"/></svg>
+
+
+### Filename: ./src/app/layout.tsx
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
+    </html>
+  );
+}
+
+
+
+### Filename: ./src/app/page.tsx
+import { TokenDeployer } from '../components';
+
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold mb-8">Independence Store</h1>
+        <TokenDeployer />
+      </div>
+    </main>
+  );
+}
+
+
+### Filename: ./src/components/TokenDeployer.tsx
+'use client';
+
+import React, { useState } from 'react';
+import { ethers } from 'ethers';
+import axios from 'axios';
+
+const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL;
+
+const TokenDeployer: React.FC = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    symbol: '',
+    description: '',
+    website: '',
+    telegram: '',
+  });
+  const [status, setStatus] = useState('');
+  const [signer, setSigner] = useState<ethers.Signer | null>(null);
+
+  const updateStatus = (message: string) => {
+    setStatus((prevStatus) => prevStatus + '\n' + message);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const sendWebhookRequest = async (data: any) => {
+    try {
+      updateStatus('Sending webhook request...');
+      const response = await axios.post(WEBHOOK_URL!, data);
+      updateStatus(`Received response with status: ${response.status}`);
+      return response.data;
+    } catch (error) {
+      updateStatus(`Error in sendWebhookRequest: ${error}`);
+    }
+  };
+
+  const connectWallet = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        const signer = provider.getSigner();
+        setSigner(signer);
+        updateStatus("Wallet connected");
+      } catch (error) {
+        updateStatus("Failed to connect wallet. Please try again.");
+      }
+    } else {
+      updateStatus("MetaMask not detected. Please install MetaMask to use this feature.");
+    }
+  };
+
+  const sendTransaction = async () => {
+    if (!signer) {
+      updateStatus("Wallet not connected");
+      return;
+    }
+    try {
+      const tx = await signer.sendTransaction({
+        to: process.env.NEXT_PUBLIC_RECIPIENT_ADDRESS,
+        value: ethers.utils.parseEther("0.001")
+      });
+      await tx.wait();
+      updateStatus(`Transaction sent! Hash: ${tx.hash}`);
+    } catch (error) {
+      updateStatus("Transaction failed. Please try again.");
+    }
+  };
+
+  const compileAndDeploy = async () => {
+    if (!formData.name || !formData.symbol) {
+      updateStatus('Please enter both name and symbol.');
+      return;
+    }
+    try {
+      const response = await axios.post('/api/deploy', {
+        name: formData.name,
+        symbol: formData.symbol
+      });
+      updateStatus(response.data.message || 'Deployment successful');
+    } catch (error) {
+      updateStatus('Deployment failed. Please try again.');
+    }
+  };
+
+  return (
+    <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+      <h2 className="text-2xl font-bold mb-4">Token Deployer</h2>
+      <form>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+            Name
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="name"
+            type="text"
+            placeholder="Token Name"
+            value={formData.name}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="symbol">
+            Symbol
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="symbol"
+            type="text"
+            placeholder="Token Symbol"
+            value={formData.symbol}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+            Description
+          </label>
+          <textarea
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="description"
+            placeholder="Token Description"
+            value={formData.description}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="website">
+            Website
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="website"
+            type="text"
+            placeholder="Website URL"
+            value={formData.website}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="telegram">
+            Telegram
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="telegram"
+            type="text"
+            placeholder="Telegram URL"
+            value={formData.telegram}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button"
+            onClick={connectWallet}
+          >
+            Connect Wallet
+          </button>
+          <button
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button"
+            onClick={sendTransaction}
+            disabled={!signer}
+          >
+            Pay AI
+          </button>
+          <button
+            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button"
+            onClick={compileAndDeploy}
+          >
+            Compile and Deploy
+          </button>
+        </div>
+      </form>
+      <div className="mt-4">
+        <h3 className="text-lg font-bold mb-2">Status:</h3>
+        <pre className="bg-gray-100 p-4 rounded">{status}</pre>
+      </div>
+    </div>
+  );
+};
+
+export default TokenDeployer;
+
+
+### Filename: ./next.config.mjs
+const nextConfig = {
+    reactStrictMode: true,
+  };
+  
+  export default nextConfig;
+
+
+### Filename: ./postcss.config.mjs
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+
+
