@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import axios from 'axios';
 import LoadingPopup from './LoadingPopup';
+import AiPopup from './AiPopup';
 
 const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL;
 const INFURA_URL = "https://mainnet.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
@@ -14,12 +15,13 @@ const TokenDeployer: React.FC = () => {
     symbol: '',
     description: '',
     website: '',
-    telegram: '',
+    logo: '',
   });
   const [status, setStatus] = useState('');
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [showAiPopup, setShowAiPopup] = useState(false);
 
   const updateStatus = (message: string) => {
     setStatus((prevStatus) => prevStatus + '\n' + message);
@@ -29,17 +31,20 @@ const TokenDeployer: React.FC = () => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const sendWebhookRequest = async () => {
+  const handleAiGeneration = async (tokenName: string) => {
     try {
-      setIsLoading(true);
-      setLoadingMessage('Automagically generating token details...');
-      const response = await axios.post(WEBHOOK_URL!, formData);
-      setFormData(response.data);
+      const response = await axios.post(WEBHOOK_URL!, { name: tokenName });
+      const { name, symbol, description, website } = response.data;
+      setFormData({
+        name,
+        symbol,
+        description,
+        website,
+        logo: 'Logo generated'
+      });
       updateStatus('AI-generated token details received');
     } catch (error) {
       updateStatus(`Error in AI generation: ${error}`);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -154,15 +159,15 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="telegram">
-            Telegram
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="logo">
+            Logo
           </label>
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="telegram"
+            id="logo"
             type="text"
-            placeholder="Telegram URL"
-            value={formData.telegram}
+            placeholder="Logo URL"
+            value={formData.logo}
             onChange={handleInputChange}
           />
         </div>
@@ -177,7 +182,7 @@ const TokenDeployer: React.FC = () => {
           <button
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             type="button"
-            onClick={sendWebhookRequest}
+            onClick={() => setShowAiPopup(true)}
           >
             Use AI
           </button>
@@ -195,6 +200,7 @@ const TokenDeployer: React.FC = () => {
         <pre className="bg-gray-100 p-4 rounded text-gray-700">{status}</pre>
       </div>
       {isLoading && <LoadingPopup message={loadingMessage} />}
+      {showAiPopup && <AiPopup onClose={() => setShowAiPopup(false)} onGenerate={handleAiGeneration} />}
     </div>
   );
 };
