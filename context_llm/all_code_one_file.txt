@@ -143,7 +143,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import solc from 'solc';
 
-const INFURA_URL = "https://mainnet.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
+const INFURA_URL = "https://sepolia.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
 
 function findImports(importPath: string) {
   try {
@@ -183,8 +183,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ message: 'Compilation failed', errors: output.errors });
     }
 
-    const bytecode = output.contracts['Token.sol'].Token.evm.bytecode.object;
-    const abi = output.contracts['Token.sol'].Token.abi;
+    const bytecode = output.contracts['Token.sol'].SimpleToken.evm.bytecode.object;
+    const abi = output.contracts['Token.sol'].SimpleToken.abi;
 
     const provider = new ethers.providers.JsonRpcProvider(INFURA_URL);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
@@ -258,6 +258,7 @@ export default config;
     "lint": "next lint"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.3",
     "ethers": "^5.7.2",
@@ -312,14 +313,23 @@ export default config;
 
 
 ### Filename: ./contracts/Token.sol
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract SimpleToken is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
+        _mint(msg.sender, 1000000 * 10 ** decimals());
+    }
+}
 
 
 ### Filename: ./.env.local
 NEXT_PUBLIC_WEBHOOK_URL=https://juank3120.app.n8n.cloud/webhook-test/0488e69d-0047-455e-afe0-15af5690d01e
 NEXT_PUBLIC_RECIPIENT_ADDRESS=your_recipient_address
-INFURA_URL=https://mainnet.infura.io/v3/377cad0f477547e98ebc2c94f12411b5
-PRIVATE_KEY=your_private_key
+INFURA_URL=https://sepolia.infura.io/v3/377cad0f477547e98ebc2c94f12411b5
+PRIVATE_KEY=f2b1024966c47cd7a2c45ba356c65249a184d84c3cdf48aab5e01f62c53ae1b8
 
 
 ### Filename: ./public/next.svg
@@ -530,7 +540,7 @@ import LoadingPopup from './LoadingPopup';
 import AiPopup from './AiPopup';
 
 const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL;
-const INFURA_URL = "https://mainnet.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
+const INFURA_URL = "https://sepolia.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
 
 const TokenDeployer: React.FC = () => {
   const [formData, setFormData] = useState({
