@@ -24,15 +24,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       contract SimpleToken {
           string public name;
           string public symbol;
-          uint8 public decimals = 18;
+          uint8 public constant decimals = 18;
           uint256 public totalSupply;
           mapping(address => uint256) public balanceOf;
+
+          event Transfer(address indexed from, address indexed to, uint256 value);
 
           constructor(string memory _name, string memory _symbol) {
               name = _name;
               symbol = _symbol;
               totalSupply = 1000000 * 10**uint256(decimals);
               balanceOf[msg.sender] = totalSupply;
+              emit Transfer(address(0), msg.sender, totalSupply);
+          }
+
+          function transfer(address to, uint256 amount) public returns (bool) {
+              require(balanceOf[msg.sender] >= amount, "Insufficient balance");
+              balanceOf[msg.sender] -= amount;
+              balanceOf[to] += amount;
+              emit Transfer(msg.sender, to, amount);
+              return true;
           }
       }
     `;
@@ -61,10 +72,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const bytecode = output.contracts[contractName].SimpleToken.evm.bytecode.object;
 
     const factory = new ethers.ContractFactory(abi, bytecode, wallet);
-    const contract = await factory.deploy(name, symbol);
-    await contract.deployed();
-
-    res.status(200).json({ message: `Contract deployed at address: ${contract.address}` });
+    const deployTransaction = factory.getDeployTransaction(name, symbol);
+    const tx = await wallet.sendTransaction(deployTransaction);
+    
+    res.status(200).json({ 
+      message: `Contract deployment transaction sent. Transaction hash: ${tx.hash}`,
+      transactionHash: tx.hash
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: `Deployment failed: ${(error as Error).message}` });

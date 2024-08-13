@@ -87,16 +87,37 @@ const TokenDeployer: React.FC = () => {
     }
     try {
       setIsLoading(true);
-      setLoadingMessage('Compiling and deploying token...');
+      setLoadingMessage('Sending deployment transaction...');
       const response = await axios.post('/api/deploy', {
         name: formData.name,
         symbol: formData.symbol
       });
-      updateStatus(response.data.message || 'Deployment successful');
+      updateStatus(`${response.data.message}\nPlease wait for the transaction to be mined.`);
+      // Start checking the transaction status
+      checkTransactionStatus(response.data.transactionHash);
     } catch (error) {
       updateStatus('Deployment failed. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const checkTransactionStatus = async (txHash: string) => {
+    const provider = new ethers.providers.JsonRpcProvider(INFURA_URL);
+    try {
+      const tx = await provider.getTransaction(txHash);
+      if (tx && tx.blockNumber) {
+        const receipt = await tx.wait();
+        if (receipt.status === 1) {
+          updateStatus(`Contract deployed successfully at address: ${receipt.contractAddress}`);
+        } else {
+          updateStatus('Contract deployment failed.');
+        }
+      } else {
+        setTimeout(() => checkTransactionStatus(txHash), 5000); // Check again after 5 seconds
+      }
+    } catch (error) {
+      updateStatus(`Error checking transaction status: ${error}`);
     }
   };
 
