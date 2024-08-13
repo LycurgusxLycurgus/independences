@@ -122,15 +122,14 @@ const TokenDeployer: React.FC = () => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-      <h2 className="text-2xl font-bold mb-4">Token Deployer</h2>
+    <div className="bg-gray-800 rounded-sm shadow p-6"> {/* Updated styling */}
       <form>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-            Name
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="name"> {/* Updated styling */}
+            Token Name
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
             id="name"
             type="text"
             placeholder="Token Name"
@@ -139,12 +138,13 @@ const TokenDeployer: React.FC = () => {
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="symbol">
-            Symbol
+        {/* Repeat similar structure for symbol, description, website, and telegram fields */}
+        <div className="mb-4"> 
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="symbol"> {/* Updated styling */}
+            Token Symbol
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
             id="symbol"
             type="text"
             placeholder="Token Symbol"
@@ -154,11 +154,11 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="description"> {/* Updated styling */}
             Description
           </label>
           <textarea
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
             id="description"
             placeholder="Token Description"
             value={formData.description}
@@ -167,11 +167,11 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="website">
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="website"> {/* Updated styling */}
             Website
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
             id="website"
             type="text"
             placeholder="Website URL"
@@ -180,11 +180,11 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="logo">
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="logo"> {/* Updated styling */}
             Logo
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
             id="logo"
             type="text"
             placeholder="Logo URL"
@@ -192,33 +192,26 @@ const TokenDeployer: React.FC = () => {
             onChange={handleInputChange}
           />
         </div>
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex justify-center space-x-4 mt-6"> {/* Updated styling */}
           <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            type="button"
-            onClick={connectWallet}
-          >
-            Connect Wallet
-          </button>
-          <button
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300" /* Updated styling */
             type="button"
             onClick={() => setShowAiPopup(true)}
           >
             Use AI
           </button>
           <button
-            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300" /* Updated styling */
             type="button"
             onClick={compileAndDeploy}
           >
-            Compile and Deploy
+            Deploy
           </button>
         </div>
       </form>
-      <div className="mt-4">
-        <h3 className="text-lg font-bold mb-2 text-gray-800">Status:</h3>
-        <pre className="bg-gray-100 p-4 rounded text-gray-700">{status}</pre>
+      <div className="mt-4"> {/* Preserving Code B element with adjusted styling */}
+        <h3 className="text-lg font-bold mb-2 text-white">Status:</h3> {/* Updated styling */}
+        <pre className="bg-gray-700 text-white p-4 rounded text-gray-700">{status}</pre> {/* Updated styling */}
       </div>
       {isLoading && <LoadingPopup message={loadingMessage} />}
       {showAiPopup && <AiPopup onClose={() => setShowAiPopup(false)} onGenerate={handleAiGeneration} />}
