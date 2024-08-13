@@ -357,11 +357,11 @@ export default function RootLayout({
 
 
 ### Filename: ./src/app/page.tsx
-// src/app/page.tsx
 import React from 'react';
 import Hero from '../components/Hero';
 import TokenDeployer from '../components/TokenDeployer';
 import About from '../components/About';
+import AiPopup from '../components/AiPopup';
 
 export default function Home() {
   return (
@@ -393,6 +393,96 @@ const About: React.FC = () => (
 );
 
 export default About;
+
+
+### Filename: ./src/components/AiPopup.tsx
+import React, { useState, useEffect } from 'react';
+
+interface AiPopupProps {
+  onClose: () => void;
+  onGenerate: (tokenName: string) => Promise<void>;
+}
+
+const AiPopup: React.FC<AiPopupProps> = ({ onClose, onGenerate }) => {
+  const [tokenName, setTokenName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setProgress(25);
+    setMessage('Generating token description...');
+
+    await onGenerate(tokenName);
+
+    // Simulate additional loading steps
+    const steps = [
+      { progress: 50, message: 'Generating token symbol...' },
+      { progress: 75, message: 'Generating logo...' },
+      { progress: 95, message: 'Generating website...' },
+    ];
+
+    for (const step of steps) {
+      await new Promise(resolve => setTimeout(resolve, 40000));
+      setProgress(step.progress);
+      setMessage(step.message);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 40000));
+    setProgress(100);
+    setMessage('Successfully generated');
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+        <h3 className="text-xl font-bold mb-4">Generate Token with AI</h3>
+        {!loading ? (
+          <>
+            <input
+              type="text"
+              value={tokenName}
+              onChange={(e) => setTokenName(e.target.value)}
+              placeholder="Enter token name"
+              className="w-full p-2 mb-4 border rounded"
+            />
+            <button
+              onClick={handleSubmit}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Generate
+            </button>
+          </>
+        ) : (
+          <div>
+            <div className="mb-4">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <p className="mt-2">{progress}%</p>
+            </div>
+            <p>{message}</p>
+          </div>
+        )}
+        {progress === 100 && (
+          <button
+            onClick={onClose}
+            className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Close
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AiPopup;
 
 
 ### Filename: ./src/components/Hero.tsx
@@ -437,6 +527,7 @@ import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import axios from 'axios';
 import LoadingPopup from './LoadingPopup';
+import AiPopup from './AiPopup';
 
 const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL;
 const INFURA_URL = "https://mainnet.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
@@ -447,12 +538,13 @@ const TokenDeployer: React.FC = () => {
     symbol: '',
     description: '',
     website: '',
-    telegram: '',
+    logo: '',
   });
   const [status, setStatus] = useState('');
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [showAiPopup, setShowAiPopup] = useState(false);
 
   const updateStatus = (message: string) => {
     setStatus((prevStatus) => prevStatus + '\n' + message);
@@ -462,17 +554,20 @@ const TokenDeployer: React.FC = () => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const sendWebhookRequest = async () => {
+  const handleAiGeneration = async (tokenName: string) => {
     try {
-      setIsLoading(true);
-      setLoadingMessage('Automagically generating token details...');
-      const response = await axios.post(WEBHOOK_URL!, formData);
-      setFormData(response.data);
+      const response = await axios.post(WEBHOOK_URL!, { name: tokenName });
+      const { name, symbol, description, website } = response.data;
+      setFormData({
+        name,
+        symbol,
+        description,
+        website,
+        logo: 'Logo generated'
+      });
       updateStatus('AI-generated token details received');
     } catch (error) {
       updateStatus(`Error in AI generation: ${error}`);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -587,15 +682,15 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="telegram">
-            Telegram
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="logo">
+            Logo
           </label>
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="telegram"
+            id="logo"
             type="text"
-            placeholder="Telegram URL"
-            value={formData.telegram}
+            placeholder="Logo URL"
+            value={formData.logo}
             onChange={handleInputChange}
           />
         </div>
@@ -610,7 +705,7 @@ const TokenDeployer: React.FC = () => {
           <button
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             type="button"
-            onClick={sendWebhookRequest}
+            onClick={() => setShowAiPopup(true)}
           >
             Use AI
           </button>
@@ -628,6 +723,7 @@ const TokenDeployer: React.FC = () => {
         <pre className="bg-gray-100 p-4 rounded text-gray-700">{status}</pre>
       </div>
       {isLoading && <LoadingPopup message={loadingMessage} />}
+      {showAiPopup && <AiPopup onClose={() => setShowAiPopup(false)} onGenerate={handleAiGeneration} />}
     </div>
   );
 };

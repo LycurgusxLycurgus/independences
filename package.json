@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.3",
     "ethers": "^5.7.2",

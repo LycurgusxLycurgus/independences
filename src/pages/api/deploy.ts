@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import solc from 'solc';
 
-const INFURA_URL = "https://mainnet.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
+const INFURA_URL = "https://sepolia.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
 
 function findImports(importPath: string) {
   try {
@@ -44,8 +44,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ message: 'Compilation failed', errors: output.errors });
     }
 
-    const bytecode = output.contracts['Token.sol'].Token.evm.bytecode.object;
-    const abi = output.contracts['Token.sol'].Token.abi;
+    const bytecode = output.contracts['Token.sol'].SimpleToken.evm.bytecode.object;
+    const abi = output.contracts['Token.sol'].SimpleToken.abi;
 
     const provider = new ethers.providers.JsonRpcProvider(INFURA_URL);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);

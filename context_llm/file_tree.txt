@@ -4,7 +4,11 @@ src/
   src/app/globals.css
   src/app/layout.tsx
   src/app/page.tsx
+  src/components/About.tsx
+  src/components/AiPopup.tsx
+  src/components/Hero.tsx
   src/components/index.ts
+  src/components/LoadingPopup.tsx
   src/components/TokenDeployer.tsx
   src/pages/api/deploy.ts
   src/types/global.d.ts
@@ -17,6 +21,7 @@ context_llm/
   context_llm/combine_files.sh
   context_llm/file_tree.txt
   context_llm/generate_file_tree.sh
+  context_llm/Process-flow.txt
   context_llm/script.txt
 ./
   ./.env.local
@@ -48,7 +53,7 @@ context_llm/
   ./.next/server/pages/_error.js.nft.json
   ./.next/server/pages-manifest.json
   ./.next/server/server-reference-manifest.json
-  ./.next/static/css/c2d4b9665dc4c75f.css
+  ./.next/static/css/8939fff28adf1c1b.css
   ./.next/types/app/layout.ts
   ./.next/types/app/page.ts
   ./.next/types/package.json
@@ -56,6 +61,7 @@ context_llm/
   ./context_llm/combine_files.sh
   ./context_llm/file_tree.txt
   ./context_llm/generate_file_tree.sh
+  ./context_llm/Process-flow.txt
   ./context_llm/script.txt
   ./next-env.d.ts
   ./next.config.mjs
@@ -69,7 +75,11 @@ context_llm/
   ./src/app/globals.css
   ./src/app/layout.tsx
   ./src/app/page.tsx
+  ./src/components/About.tsx
+  ./src/components/AiPopup.tsx
+  ./src/components/Hero.tsx
   ./src/components/index.ts
+  ./src/components/LoadingPopup.tsx
   ./src/components/TokenDeployer.tsx
   ./src/pages/api/deploy.ts
   ./src/types/global.d.ts

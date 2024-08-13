@@ -7,7 +7,7 @@ import LoadingPopup from './LoadingPopup';
 import AiPopup from './AiPopup';
 
 const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL;
-const INFURA_URL = "https://mainnet.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
+const INFURA_URL = "https://sepolia.infura.io/v3/377cad0f477547e98ebc2c94f12411b5";
 
 const TokenDeployer: React.FC = () => {
   const [formData, setFormData] = useState({
