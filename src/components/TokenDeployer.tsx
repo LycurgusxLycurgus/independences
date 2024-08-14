@@ -22,6 +22,7 @@ const TokenDeployer: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showAiPopup, setShowAiPopup] = useState(false);
+  const [deployedAddress, setDeployedAddress] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -29,6 +30,8 @@ const TokenDeployer: React.FC = () => {
 
   const handleAiGeneration = async (tokenName: string) => {
     try {
+      setIsLoading(true);
+      setLoadingMessage('Generating token information...');
       const response = await axios.post(WEBHOOK_URL!, { name: tokenName });
       const { name, symbol, description, website } = response.data;
       setFormData({
@@ -38,8 +41,10 @@ const TokenDeployer: React.FC = () => {
         website,
         logo: 'Logo generated'
       });
+      setIsLoading(false);
     } catch (error) {
       setErrorMessage('Error in AI generation. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -99,14 +104,14 @@ const TokenDeployer: React.FC = () => {
       if (tx && tx.blockNumber) {
         const receipt = await tx.wait();
         if (receipt.status === 1) {
+          setDeployedAddress(receipt.contractAddress);
           setLoadingMessage(`Contract deployed successfully at address: ${receipt.contractAddress}`);
-          setTimeout(() => setIsLoading(false), 3000);
         } else {
           setErrorMessage('Contract deployment failed.');
           setIsLoading(false);
         }
       } else {
-        setTimeout(() => checkTransactionStatus(txHash), 5000); 
+        setTimeout(() => checkTransactionStatus(txHash), 5000);
       }
     } catch (error) {
       setErrorMessage('Error checking transaction status. Please try again.');
@@ -115,14 +120,14 @@ const TokenDeployer: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-800 rounded-sm shadow p-6"> 
+    <div className="bg-gray-800 rounded-sm shadow p-6">
       <form>
         <div className="mb-4">
-          <label className="block text-white text-sm font-medium mb-2" htmlFor="name"> 
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="name">
             Token Name
           </label>
           <input
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" 
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             id="name"
             type="text"
             placeholder="Token Name"
@@ -131,7 +136,7 @@ const TokenDeployer: React.FC = () => {
             required
           />
         </div>
-        <div className="mb-4"> 
+        <div className="mb-4">
           <label className="block text-white text-sm font-medium mb-2" htmlFor="symbol">
             Token Symbol
           </label>
@@ -163,7 +168,7 @@ const TokenDeployer: React.FC = () => {
             Website
           </label>
           <input
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" 
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             id="website"
             type="text"
             placeholder="Website URL"
@@ -172,11 +177,11 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-white text-sm font-medium mb-2" htmlFor="logo"> 
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="logo">
             Logo
           </label>
           <input
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" 
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             id="logo"
             type="text"
             placeholder="Logo URL"
@@ -184,16 +189,16 @@ const TokenDeployer: React.FC = () => {
             onChange={handleInputChange}
           />
         </div>
-        <div className="flex justify-center space-x-4 mt-6"> 
+        <div className="flex justify-center space-x-4 mt-6">
           <button
-            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300" 
+            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300"
             type="button"
             onClick={() => setShowAiPopup(true)}
           >
             Use AI
           </button>
           <button
-            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300" 
+            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300"
             type="button"
             onClick={compileAndDeploy}
           >
@@ -209,8 +214,25 @@ const TokenDeployer: React.FC = () => {
           </span>
         </div>
       )}
-      {isLoading && <LoadingPopup message={loadingMessage} />}
-      {showAiPopup && <AiPopup onClose={() => setShowAiPopup(false)} onGenerate={handleAiGeneration} />}
+      {isLoading && (
+        <LoadingPopup
+          message={loadingMessage}
+          isDeployed={!!deployedAddress}
+          onClose={() => {
+            setIsLoading(false);
+            setDeployedAddress(null);
+          }}
+        />
+      )}
+      {showAiPopup && (
+        <AiPopup
+          onClose={() => {
+            setShowAiPopup(false);
+            setIsLoading(false);
+          }}
+          onGenerate={handleAiGeneration}
+        />
+      )}
     </div>
   );
 };

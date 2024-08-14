@@ -33,8 +33,7 @@ const AiPopup: React.FC<AiPopupProps> = ({ onClose, onGenerate }) => {
 
     await new Promise(resolve => setTimeout(resolve, 5000));
     setProgress(100);
-    setMessage('Successfully generated');
-    setLoading(false);
+    setMessage('Token information generated successfully!');
   };
 
   return (
@@ -78,12 +77,14 @@ const AiPopup: React.FC<AiPopupProps> = ({ onClose, onGenerate }) => {
           </div>
         )}
         {progress === 100 && (
-          <button
-            onClick={onClose}
-             className="mt-4 bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition duration-300"
-          >
-            Close
-          </button>
+          <div className="mt-4">
+            <button
+              onClick={onClose}
+              className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition duration-300"
+            >
+              Close
+            </button>
+          </div>
         )}
       </div>
     </motion.div>
