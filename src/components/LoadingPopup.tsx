@@ -13,7 +13,7 @@ const LoadingPopup: React.FC<LoadingPopupProps> = ({ message }) => (
     className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
   >
     <div className="bg-gray-800 p-8 rounded-lg shadow-lg text-center">
-      <h3 className="text-xl font-bold mb-4 text-white">Loading</h3>
+      <h3 className="text-xl font-bold mb-4 text-white">Processing</h3>
       <p className="text-gray-300">{message}</p>
       <div className="mt-4">
         <motion.div

@@ -22,6 +22,7 @@ context_llm/
   context_llm/file_tree.txt
   context_llm/generate_file_tree.sh
   context_llm/Process-flow.txt
+  context_llm/run_both.sh
   context_llm/script.txt
 ./
   ./.env.local
@@ -53,7 +54,7 @@ context_llm/
   ./.next/server/pages/_error.js.nft.json
   ./.next/server/pages-manifest.json
   ./.next/server/server-reference-manifest.json
-  ./.next/static/css/92b590205302a8d8.css
+  ./.next/static/css/b279f3a393b58b7e.css
   ./.next/types/app/layout.ts
   ./.next/types/app/page.ts
   ./.next/types/package.json
@@ -62,6 +63,7 @@ context_llm/
   ./context_llm/file_tree.txt
   ./context_llm/generate_file_tree.sh
   ./context_llm/Process-flow.txt
+  ./context_llm/run_both.sh
   ./context_llm/script.txt
   ./next-env.d.ts
   ./next.config.mjs

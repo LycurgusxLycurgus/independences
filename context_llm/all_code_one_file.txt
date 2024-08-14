@@ -113,6 +113,14 @@ done
 echo "File tree saved to $OUTPUT_FILE"
 
 
+### Filename: ./context_llm/run_both.sh
+#!/bin/bash
+
+# Run both scripts
+./context_llm/combine_files.sh
+./context_llm/generate_file_tree.sh
+
+
 ### Filename: ./next-env.d.ts
 /// <reference types="next" />
 /// <reference types="next/image-types/global" />
@@ -583,7 +591,7 @@ const LoadingPopup: React.FC<LoadingPopupProps> = ({ message }) => (
     className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
   >
     <div className="bg-gray-800 p-8 rounded-lg shadow-lg text-center">
-      <h3 className="text-xl font-bold mb-4 text-white">Loading</h3>
+      <h3 className="text-xl font-bold mb-4 text-white">Processing</h3>
       <p className="text-gray-300">{message}</p>
       <div className="mt-4">
         <motion.div
@@ -619,15 +627,11 @@ const TokenDeployer: React.FC = () => {
     website: '',
     logo: '',
   });
-  const [status, setStatus] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showAiPopup, setShowAiPopup] = useState(false);
-
-  const updateStatus = (message: string) => {
-    setStatus((prevStatus) => prevStatus + '\n' + message);
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -644,9 +648,8 @@ const TokenDeployer: React.FC = () => {
         website,
         logo: 'Logo generated'
       });
-      updateStatus('AI-generated token details received');
     } catch (error) {
-      updateStatus(`Error in AI generation: ${error}`);
+      setErrorMessage('Error in AI generation. Please try again.');
     }
   };
 
@@ -656,18 +659,17 @@ const TokenDeployer: React.FC = () => {
         await window.ethereum.request({ method: 'eth_requestAccounts' });
         const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
         setSigner(provider.getSigner());
-        updateStatus("Wallet connected");
       } catch (error) {
-        updateStatus("Failed to connect wallet. Please try again.");
+        setErrorMessage("Failed to connect wallet. Please try again.");
       }
     } else {
-      updateStatus("MetaMask not detected. Please install MetaMask to use this feature.");
+      setErrorMessage("MetaMask not detected. Please install MetaMask to use this feature.");
     }
   };
 
   const sendTransaction = async () => {
     if (!signer) {
-      updateStatus("Wallet not connected");
+      setErrorMessage("Wallet not connected");
       return;
     }
     try {
@@ -676,33 +678,30 @@ const TokenDeployer: React.FC = () => {
         value: ethers.utils.parseEther("0.001")
       });
       await tx.wait();
-      updateStatus(`Transaction sent! Hash: ${tx.hash}`);
     } catch (error) {
-      updateStatus("Transaction failed. Please try again.");
+      setErrorMessage("Transaction failed. Please try again.");
     }
   };
 
   const compileAndDeploy = async () => {
     if (!formData.name || !formData.symbol) {
-      updateStatus('Please enter both name and symbol.');
+      setErrorMessage('Please enter both name and symbol.');
       return;
     }
     try {
       setIsLoading(true);
-      setLoadingMessage('Compiling contract...');
+      setLoadingMessage('Compiling and deploying contract...');
       const response = await axios.post('/api/deploy', {
         name: formData.name,
         symbol: formData.symbol
       });
-      updateStatus(`${response.data.message}\nDeploying contract...`);
-      // Start checking the transaction status
       checkTransactionStatus(response.data.transactionHash);
     } catch (error) {
-      updateStatus('Deployment failed. Please try again.');
+      setErrorMessage('Deployment failed. Please try again.');
       setIsLoading(false);
     }
   };
-  
+
   const checkTransactionStatus = async (txHash: string) => {
     const provider = new ethers.providers.JsonRpcProvider(INFURA_URL);
     try {
@@ -710,30 +709,30 @@ const TokenDeployer: React.FC = () => {
       if (tx && tx.blockNumber) {
         const receipt = await tx.wait();
         if (receipt.status === 1) {
-          updateStatus(`Contract deployed successfully at address: ${receipt.contractAddress}`);
-          setIsLoading(false);
+          setLoadingMessage(`Contract deployed successfully at address: ${receipt.contractAddress}`);
+          setTimeout(() => setIsLoading(false), 3000);
         } else {
-          updateStatus('Contract deployment failed.');
+          setErrorMessage('Contract deployment failed.');
           setIsLoading(false);
         }
       } else {
-        setTimeout(() => checkTransactionStatus(txHash), 5000); // Check again after 5 seconds
+        setTimeout(() => checkTransactionStatus(txHash), 5000); 
       }
     } catch (error) {
-      updateStatus(`Error checking transaction status: ${error}`);
+      setErrorMessage('Error checking transaction status. Please try again.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="bg-gray-800 rounded-sm shadow p-6"> {/* Updated styling */}
+    <div className="bg-gray-800 rounded-sm shadow p-6"> 
       <form>
         <div className="mb-4">
-          <label className="block text-white text-sm font-medium mb-2" htmlFor="name"> {/* Updated styling */}
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="name"> 
             Token Name
           </label>
           <input
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" 
             id="name"
             type="text"
             placeholder="Token Name"
@@ -742,13 +741,12 @@ const TokenDeployer: React.FC = () => {
             required
           />
         </div>
-        {/* Repeat similar structure for symbol, description, website, and telegram fields */}
         <div className="mb-4"> 
-          <label className="block text-white text-sm font-medium mb-2" htmlFor="symbol"> {/* Updated styling */}
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="symbol">
             Token Symbol
           </label>
           <input
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             id="symbol"
             type="text"
             placeholder="Token Symbol"
@@ -758,11 +756,11 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-white text-sm font-medium mb-2" htmlFor="description"> {/* Updated styling */}
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="description">
             Description
           </label>
           <textarea
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             id="description"
             placeholder="Token Description"
             value={formData.description}
@@ -771,11 +769,11 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-white text-sm font-medium mb-2" htmlFor="website"> {/* Updated styling */}
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="website">
             Website
           </label>
           <input
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" 
             id="website"
             type="text"
             placeholder="Website URL"
@@ -784,11 +782,11 @@ const TokenDeployer: React.FC = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-white text-sm font-medium mb-2" htmlFor="logo"> {/* Updated styling */}
+          <label className="block text-white text-sm font-medium mb-2" htmlFor="logo"> 
             Logo
           </label>
           <input
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" /* Updated styling */
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-600" 
             id="logo"
             type="text"
             placeholder="Logo URL"
@@ -796,16 +794,16 @@ const TokenDeployer: React.FC = () => {
             onChange={handleInputChange}
           />
         </div>
-        <div className="flex justify-center space-x-4 mt-6"> {/* Updated styling */}
+        <div className="flex justify-center space-x-4 mt-6"> 
           <button
-            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300" /* Updated styling */
+            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300" 
             type="button"
             onClick={() => setShowAiPopup(true)}
           >
             Use AI
           </button>
           <button
-            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300" /* Updated styling */
+            className="bg-indigo-600 text-white py-3 px-6 rounded-sm hover:bg-indigo-700 transition duration-300" 
             type="button"
             onClick={compileAndDeploy}
           >
@@ -813,10 +811,14 @@ const TokenDeployer: React.FC = () => {
           </button>
         </div>
       </form>
-      <div className="mt-4"> {/* Preserving Code B element with adjusted styling */}
-        <h3 className="text-lg font-bold mb-2 text-white">Status:</h3> {/* Updated styling */}
-        <pre className="bg-gray-700 text-white p-4 rounded text-gray-700">{status}</pre> {/* Updated styling */}
-      </div>
+      {errorMessage && (
+        <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{errorMessage}</span>
+          <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setErrorMessage('')}>
+            <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+          </span>
+        </div>
+      )}
       {isLoading && <LoadingPopup message={loadingMessage} />}
       {showAiPopup && <AiPopup onClose={() => setShowAiPopup(false)} onGenerate={handleAiGeneration} />}
     </div>

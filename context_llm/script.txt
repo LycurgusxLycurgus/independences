@@ -13,3 +13,8 @@ BASH_SCRIPTS
 
     ---
 
+    chmod +x run_both.sh
+
+    ./context_llm/run_both.sh
+
+    ---
