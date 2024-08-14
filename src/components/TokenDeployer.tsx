@@ -87,17 +87,16 @@ const TokenDeployer: React.FC = () => {
     }
     try {
       setIsLoading(true);
-      setLoadingMessage('Sending deployment transaction...');
+      setLoadingMessage('Compiling contract...');
       const response = await axios.post('/api/deploy', {
         name: formData.name,
         symbol: formData.symbol
       });
-      updateStatus(`${response.data.message}\nPlease wait for the transaction to be mined.`);
+      updateStatus(`${response.data.message}\nDeploying contract...`);
       // Start checking the transaction status
       checkTransactionStatus(response.data.transactionHash);
     } catch (error) {
       updateStatus('Deployment failed. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -110,14 +109,17 @@ const TokenDeployer: React.FC = () => {
         const receipt = await tx.wait();
         if (receipt.status === 1) {
           updateStatus(`Contract deployed successfully at address: ${receipt.contractAddress}`);
+          setIsLoading(false);
         } else {
           updateStatus('Contract deployment failed.');
+          setIsLoading(false);
         }
       } else {
         setTimeout(() => checkTransactionStatus(txHash), 5000); // Check again after 5 seconds
       }
     } catch (error) {
       updateStatus(`Error checking transaction status: ${error}`);
+      setIsLoading(false);
     }
   };
 

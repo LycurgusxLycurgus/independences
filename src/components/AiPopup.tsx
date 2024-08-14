@@ -1,4 +1,3 @@
-// src/components/AiPopup.tsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -81,7 +80,7 @@ const AiPopup: React.FC<AiPopupProps> = ({ onClose, onGenerate }) => {
         {progress === 100 && (
           <button
             onClick={onClose}
-            className="mt-4 bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-300"
+             className="mt-4 bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition duration-300"
           >
             Close
           </button>

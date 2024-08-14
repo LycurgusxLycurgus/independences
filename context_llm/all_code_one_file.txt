@@ -433,7 +433,6 @@ export default About;
 
 
 ### Filename: ./src/components/AiPopup.tsx
-// src/components/AiPopup.tsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -516,7 +515,7 @@ const AiPopup: React.FC<AiPopupProps> = ({ onClose, onGenerate }) => {
         {progress === 100 && (
           <button
             onClick={onClose}
-            className="mt-4 bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-300"
+             className="mt-4 bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition duration-300"
           >
             Close
           </button>
@@ -690,17 +689,16 @@ const TokenDeployer: React.FC = () => {
     }
     try {
       setIsLoading(true);
-      setLoadingMessage('Sending deployment transaction...');
+      setLoadingMessage('Compiling contract...');
       const response = await axios.post('/api/deploy', {
         name: formData.name,
         symbol: formData.symbol
       });
-      updateStatus(`${response.data.message}\nPlease wait for the transaction to be mined.`);
+      updateStatus(`${response.data.message}\nDeploying contract...`);
       // Start checking the transaction status
       checkTransactionStatus(response.data.transactionHash);
     } catch (error) {
       updateStatus('Deployment failed. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -713,14 +711,17 @@ const TokenDeployer: React.FC = () => {
         const receipt = await tx.wait();
         if (receipt.status === 1) {
           updateStatus(`Contract deployed successfully at address: ${receipt.contractAddress}`);
+          setIsLoading(false);
         } else {
           updateStatus('Contract deployment failed.');
+          setIsLoading(false);
         }
       } else {
         setTimeout(() => checkTransactionStatus(txHash), 5000); // Check again after 5 seconds
       }
     } catch (error) {
       updateStatus(`Error checking transaction status: ${error}`);
+      setIsLoading(false);
     }
   };
 
