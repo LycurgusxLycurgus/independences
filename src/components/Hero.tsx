@@ -18,14 +18,16 @@ const Hero: React.FC = () => (
           </button>
         </div>
       </div>
-      <div className="lg:w-1/2">
-        <Image
-          src="https://i.imgur.com/eKPlFYb.png"
-          alt="Hero Image"
-          width={640}
-          height={405}
-          className="rounded-lg"
-        />
+      <div className="lg:w-1/2 relative">
+        <div style={{ width: '100%', height: '0', paddingBottom: '62.5%', position: 'relative' }}>
+          <Image
+            src="https://i.imgur.com/eKPlFYb.png"
+            alt="Hero Image"
+            layout="fill"
+            objectFit="cover"
+            className="rounded-lg"
+          />
+        </div>
       </div>
     </div>
   </div>

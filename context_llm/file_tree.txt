@@ -53,7 +53,7 @@ context_llm/
   ./.next/server/pages/_error.js.nft.json
   ./.next/server/pages-manifest.json
   ./.next/server/server-reference-manifest.json
-  ./.next/static/css/c75f32fbc6225a12.css
+  ./.next/static/css/35aabdecbb9ed589.css
   ./.next/types/app/layout.ts
   ./.next/types/app/page.ts
   ./.next/types/package.json

@@ -1,5 +1,8 @@
 const nextConfig = {
-    reactStrictMode: true,
-  };
-  
-  export default nextConfig;
+  reactStrictMode: true,
+  images: {
+    domains: ['i.imgur.com'],
+  },
+};
+
+export default nextConfig;
