@@ -1,6 +1,6 @@
 import React from 'react';
 import Hero from '../components/Hero';
-import TokenDeployer from '../components/TokenDeployer';
+import TokenDeployer from '../components/TokenDeployer/index';
 import About from '../components/About';
 
 export default function Home() {
